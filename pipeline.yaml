@@ -1,0 +1,44 @@
+---
+resources:
+- name: ec2
+  type: git
+  source:
+    uri: https://github.com/skyrych/cnc-docker.git
+    branch: main
+jobs:
+- name: terraform-pipe-line
+  plan:
+  - get: ec2
+  - task: check-terraform-version
+    config:
+      platform: linux
+      image_resource:
+        type: docker-image
+        source: {repository: hashicorp/terraform}
+      run:
+         path: sh
+         args:
+             - -exc
+             - |
+               terraform --version
+  - task: run-ec2-instance
+    config: 
+      platform: linux
+      image_resource:
+        type: docker-image
+        source: {repository: hashicorp/terraform}
+      inputs:
+         - name: ec2
+      run: 
+          path: sh
+          args:
+              - -exc
+              - |
+                env
+                ls -lrth
+                cd ec2
+                terraform init
+                terraform apply -auto-approve
+      params:
+        AWS_ACCESS_KEY_ID: ((access-key))
+        AWS_SECRET_ACCESS_KEY: ((secret-key))
